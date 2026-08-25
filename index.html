@@ -11,6 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --bg: #0c1e1a;
@@ -177,31 +178,40 @@ const KEYS = { usuarios:'usuarios', clientes:'clientes', reportes:'reportes', me
 // window.storage solo existe dentro del panel de artefactos de Claude.ai.
 // Si el archivo se abre suelto en el navegador (doble clic / file://), usamos
 // localStorage como respaldo para que el guardado funcione igual.
-const TIENE_CLOUD_STORAGE = (typeof window !== 'undefined' && typeof window.storage !== 'undefined');
-const LS_PREFIX = 'fumigaciones_';
+const SUPABASE_URL = 'https://atxzjojmemowrgyrqpol.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_1u3XTPd9Ypn-nciaPcueOg_9R0vJRSQ';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function loadKey(key, fallback){
-  try{
-    if(TIENE_CLOUD_STORAGE){
-      const r = await window.storage.get(key, true);
-      return r ? JSON.parse(r.value) : fallback;
-    } else {
-      const raw = localStorage.getItem(LS_PREFIX + key);
-      return raw ? JSON.parse(raw) : fallback;
+  try {
+    const { data, error } = await supabaseClient.from(key).select('*');
+    if (error) {
+      console.error('Error al cargar la tabla ' + key + ':', error);
+      return fallback;
     }
-  }catch(e){ console.error('loadKey', key, e); return fallback; }
+    if (key === KEYS.rangos) {
+      return (data && data.length > 0) ? data[0].config : fallback;
+    }
+    return data || fallback;
+  } catch(e) {
+    console.error('loadKey exception', key, e);
+    return fallback;
+  }
 }
+
 async function saveKey(key, value){
-  try{
-    if(TIENE_CLOUD_STORAGE){
-      await window.storage.set(key, JSON.stringify(value), true);
-    } else {
-      localStorage.setItem(LS_PREFIX + key, JSON.stringify(value));
+  try {
+    if (key === KEYS.rangos) {
+      const { error } = await supabaseClient.from('rangos').upsert({ id: 1, config: value });
+      if (error) throw error;
+      return true;
     }
+    const { error } = await supabaseClient.from(key).upsert(value);
+    if (error) throw error;
     return true;
-  }catch(e){
-    console.error('saveKey', key, e);
-    toast('No se pudo guardar (' + key + '). Revisa la consola del navegador.', true);
+  } catch(e) {
+    console.error('saveKey error', key, e);
+    toast('No se pudo guardar (' + key + ') en Supabase.', true);
     return false;
   }
 }
