@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gestión de Fumigaciones · Los Ángeles Corporativo</title>
+<link rel="icon" href="tortuga.png">
+<script>function ocultarSiNoCarga(img){ img.style.display='none'; }</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<style>
+  :root{
+    --bg: #0c1e1a;
+    --bg-2: #0a1815;
+    --surface: #122b25;
+    --surface-2: #193830;
+    --border: #24463c;
+    --text: #eef6f2;
+    --muted: #8fada3;
+    --amber: #f2a30f;
+    --amber-dim: #c9840b;
+    --red: #e0483f;
+    --green: #59b37d;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'IBM Plex Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    min-height:100vh;
+    line-height:1.5;
+  }
+  h1,h2,h3,h4{font-family:var(--font-display);margin:0 0 .4em 0;letter-spacing:.2px;}
+  a{color:var(--amber);}
+  .hazard{
+    height:8px;
+    background:repeating-linear-gradient(135deg,var(--amber) 0 14px,#111 14px 28px);
+    border-radius:4px;
+    margin:14px 0 22px 0;
+  }
+  .mono{font-family:var(--font-mono);}
+  .muted{color:var(--muted);}
+  button, input, select, textarea{font-family:var(--font-body);}
+  input, select, textarea{
+    width:100%;
+    background:var(--bg-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:10px 12px;
+    border-radius:8px;
+    font-size:.95rem;
+    margin-bottom:12px;
+  }
+  input:focus, select:focus, textarea:focus{outline:1px solid var(--amber);border-color:var(--amber);}
+  label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.6px;}
+  .field{margin-bottom:14px;}
+  button{
+    cursor:pointer;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    color:var(--text);
+    padding:10px 16px;
+    font-weight:600;
+    font-size:.9rem;
+    transition:transform .15s ease, background .15s ease, border-color .15s ease;
+  }
+  button:hover{transform:translateY(-1px);border-color:var(--amber);}
+  button.primary{background:var(--amber);border-color:var(--amber);color:#141414;}
+  button.primary:hover{background:#ffb62e;}
+  button.danger{background:transparent;border-color:var(--red);color:var(--red);}
+  button.ghost{background:transparent;}
+  button.tab{background:transparent;border:1px solid transparent;color:var(--muted);}
+  button.tab.active{background:var(--surface-2);color:var(--amber);border-color:var(--border);}
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:22px;
+    margin-bottom:18px;
+  }
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr;}}
+  table{width:100%;border-collapse:collapse;font-size:.88rem;}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border);}
+  th{color:var(--amber);font-family:var(--font-mono);font-weight:600;text-transform:uppercase;font-size:.72rem;letter-spacing:.5px;}
+  .badge{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:6px 12px;border-radius:8px;font-weight:700;font-size:.82rem;
+    border:1px solid; margin-bottom:10px;
+  }
+  .badge.green{color:var(--green);border-color:var(--green);background:rgba(89,179,125,.12);}
+  .badge.amber{color:var(--amber);border-color:var(--amber);background:rgba(242,163,15,.12);}
+  .badge.red{color:var(--red);border-color:var(--red);background:rgba(224,72,63,.12);}
+  details{background:var(--bg-2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;padding:2px 14px;}
+  details summary{cursor:pointer;padding:12px 0;font-weight:600;font-family:var(--font-display);}
+  details[open] summary{color:var(--amber);}
+
+  /* ---- Acordeón animado (con soporte táctil) ---- */
+  .acc{border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:var(--bg-2);overflow:hidden;}
+  .acc-header{
+    display:flex;align-items:center;gap:10px;width:100%;
+    background:transparent;border:none;text-align:left;
+    padding:13px 14px;font-family:var(--font-display);font-weight:600;
+    color:var(--text);cursor:pointer;font-size:.95rem;
+    -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  }
+  .acc-header:hover{transform:none;border-color:transparent;background:rgba(255,255,255,.03);}
+  .acc-header .chev{display:inline-block;font-size:.72rem;color:var(--muted);transition:transform .25s ease;}
+  .acc-header.open{color:var(--amber);}
+  .acc-header.open .chev{transform:rotate(90deg);color:var(--amber);}
+  .acc-body{max-height:0;overflow:hidden;transition:max-height .3s cubic-bezier(.4,0,.2,1);}
+  .acc-body-inner{padding:0 14px 14px 14px;color:var(--muted);font-size:.9rem;}
+  @media(prefers-reduced-motion: reduce){.acc-body{transition:none;}}
+  .metric{background:var(--bg-2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;}
+  .metric .n{font-family:var(--font-display);font-size:1.6rem;font-weight:700;}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--surface-2);border:1px solid var(--amber);border-radius:10px;padding:12px 18px;z-index:999;max-width:320px;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+  .toast.err{border-color:var(--red);}
+
+  /* ---- Auth screen ---- */
+  .auth-wrap{min-height:100vh;display:grid;grid-template-columns:1.15fr 1fr;}
+  @media(max-width:900px){.auth-wrap{grid-template-columns:1fr;}}
+  .auth-brand{padding:56px 48px;background:radial-gradient(circle at 20% 20%, #16332c 0%, var(--bg-2) 60%);border-right:1px solid var(--border);}
+  @media(max-width:900px){.auth-brand{border-right:none;border-bottom:1px solid var(--border);padding:40px 26px;}}
+  .auth-brand .tag{font-family:var(--font-mono);color:var(--amber);letter-spacing:2px;font-size:.78rem;text-transform:uppercase;}
+  .auth-brand h1{font-size:2.4rem;margin-top:10px;}
+  .auth-form-wrap{padding:56px 48px;display:flex;align-items:center;}
+  @media(max-width:900px){.auth-form-wrap{padding:32px 26px;}}
+  .tabs-row{display:flex;gap:6px;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+
+  /* ---- App shell ---- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    padding:14px 22px;border-bottom:1px solid var(--border);background:var(--bg-2);
+    position:sticky;top:0;z-index:20;flex-wrap:wrap;
+  }
+  .brandmini{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;}
+  .brandmini .dot{width:10px;height:10px;border-radius:50%;background:var(--amber);}
+  .nav-tabs{display:flex;gap:4px;overflow-x:auto;padding:10px 22px 0 22px;border-bottom:1px solid var(--border);background:var(--bg-2);}
+  .nav-tabs button{white-space:nowrap;border-radius:8px 8px 0 0;}
+  .userchip{display:flex;align-items:center;gap:10px;}
+  .userchip .name{font-weight:700;}
+  .userchip .role{font-size:.7rem;color:var(--amber);text-transform:uppercase;letter-spacing:.6px;font-family:var(--font-mono);}
+  .content{padding:26px 22px;max-width:1180px;margin:0 auto;}
+  .codebox{font-family:var(--font-mono);background:var(--bg-2);border:1px dashed var(--amber);border-radius:8px;padding:10px 14px;display:inline-block;font-size:1.05rem;letter-spacing:3px;color:var(--amber);}
+  canvas.firma{background:#fff;border-radius:8px;border:1px solid var(--border);touch-action:none;max-width:100%;height:auto;display:block;}
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .table-scroll table{min-width:640px;}
+  .chatbox{max-height:340px;overflow-y:auto;background:var(--bg-2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;}
+  .msg{max-width:75%;padding:8px 12px;border-radius:10px;margin-bottom:8px;font-size:.9rem;}
+  .msg.mine{margin-left:auto;background:rgba(242,163,15,.18);border:1px solid var(--amber);}
+  .msg.theirs{background:var(--surface-2);border:1px solid var(--border);}
+  .msg .meta{font-size:.68rem;color:var(--muted);margin-bottom:2px;font-family:var(--font-mono);}
+  #map{height:420px;border-radius:12px;overflow:hidden;border:1px solid var(--border);}
+  small.help{display:block;color:var(--muted);margin-top:-6px;margin-bottom:10px;font-size:.78rem;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =========================================================================
+   ALMACENAMIENTO PERSISTENTE (window.storage) — datos compartidos entre
+   quienes abran este artefacto: usuarios, clientes, reportes y mensajes
+   viven en storage "shared" para simular un backend real multiusuario.
+   ========================================================================= */
+const KEYS = { usuarios:'usuarios', clientes:'clientes', reportes:'reportes', mensajes:'mensajes', rangos:'rangos' };
+
+// window.storage solo existe dentro del panel de artefactos de Claude.ai.
+// Si el archivo se abre suelto en el navegador (doble clic / file://), usamos
+// localStorage como respaldo para que el guardado funcione igual.
+const TIENE_CLOUD_STORAGE = (typeof window !== 'undefined' && typeof window.storage !== 'undefined');
+const LS_PREFIX = 'fumigaciones_';
+
+async function loadKey(key, fallback){
+  try{
+    if(TIENE_CLOUD_STORAGE){
+      const r = await window.storage.get(key, true);
+      return r ? JSON.parse(r.value) : fallback;
+    } else {
+      const raw = localStorage.getItem(LS_PREFIX + key);
+      return raw ? JSON.parse(raw) : fallback;
+    }
+  }catch(e){ console.error('loadKey', key, e); return fallback; }
+}
+async function saveKey(key, value){
+  try{
+    if(TIENE_CLOUD_STORAGE){
+      await window.storage.set(key, JSON.stringify(value), true);
+    } else {
+      localStorage.setItem(LS_PREFIX + key, JSON.stringify(value));
+    }
+    return true;
+  }catch(e){
+    console.error('saveKey', key, e);
+    toast('No se pudo guardar (' + key + '). Revisa la consola del navegador.', true);
+    return false;
+  }
+}
+
+const TIPOS_ESTABLECIMIENTO = ["Vivienda","Hotel","Restaurante / Comercio","Industria Alimentaria","Hospital / Escuela","Oficina / Bodega"];
+const NIVELES = ["Baja","Media","Alta"];
+const DESCRIPCION_NIVEL = {
+  Baja:["🟢","Pocos individuos o evidencia mínima. No representa infestación generalizada."],
+  Media:["🟡","Presencia frecuente en una o varias áreas. Requiere tratamiento correctivo."],
+  Alta:["🔴","Presencia numerosa y generalizada. Requiere intervención inmediata."]
+};
+const RANGOS_DEFAULT = {
+  "Vivienda":{Baja:[1,10],Media:[11,50],Alta:[51,null]},
+  "Hotel":{Baja:[1,5],Media:[6,20],Alta:[21,null]},
+  "Restaurante / Comercio":{Baja:[1,3],Media:[4,15],Alta:[16,null]},
+  "Industria Alimentaria":{Baja:[1,2],Media:[3,10],Alta:[11,null]},
+  "Hospital / Escuela":{Baja:[1,5],Media:[6,20],Alta:[21,null]},
+  "Oficina / Bodega":{Baja:[1,10],Media:[11,40],Alta:[41,null]}
+};
+const CLASE_TOXI = {
+  Verde:{orden:1,cat:"Categoría IV",desc:"Ligeramente tóxico",color:"var(--green)",icono:"🟢",cls:"green"},
+  Azul:{orden:2,cat:"Categoría III",desc:"Moderadamente tóxico",color:"#3b9be0",icono:"🔵",cls:"amber"},
+  Amarilla:{orden:3,cat:"Categoría II",desc:"Altamente tóxico",color:"var(--amber)",icono:"🟡",cls:"amber"},
+  Roja:{orden:4,cat:"Categoría I",desc:"Extremadamente tóxico",color:"var(--red)",icono:"🔴",cls:"red"}
+};
+const PRODUCTO_TOXI = {
+  "Demand® 2.5 CS (Syngenta)":"Verde",
+  "Termidor® 25 CE (BASF)":"Verde",
+  "DDVP® 500 U (Agroquímica Tridente)":"Roja"
+};
+
+let session = null;      // usuario en sesión (solo en memoria, no persiste al recargar)
+let navTecnico = "Inicio";
+let navCliente = "Inicio";
+let chatContacto = null;
+let firmaCtx = null, firmaDrawing = false, firmaTieneTrazo = false;
+let chartRef = null;
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+function toast(msg, isErr){
+  const el = document.createElement('div');
+  el.className = 'toast' + (isErr ? ' err' : '');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 3200);
+}
+
+/* Acordeón animado — funciona igual con click (mouse) y tap (móvil) */
+function acc(titulo, cuerpoHtml){
+  return `<div class="acc">
+    <button type="button" class="acc-header" onclick="toggleAcc(this)"><span class="chev">▶</span> ${titulo}</button>
+    <div class="acc-body"><div class="acc-body-inner">${cuerpoHtml}</div></div>
+  </div>`;
+}
+function toggleAcc(headerEl){
+  const body = headerEl.nextElementSibling;
+  const abriendo = !headerEl.classList.contains('open');
+  if(abriendo){
+    headerEl.classList.add('open');
+    body.style.maxHeight = body.scrollHeight + 'px';
+    const onEnd = (e)=>{
+      if(e.propertyName !== 'max-height') return;
+      if(headerEl.classList.contains('open')) body.style.maxHeight = 'none';
+      body.removeEventListener('transitionend', onEnd);
+    };
+    body.addEventListener('transitionend', onEnd);
+  } else {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    requestAnimationFrame(()=>{ body.style.maxHeight = '0px'; });
+    headerEl.classList.remove('open');
+  }
+}
+
+async function hashPass(password, salt){
+  const enc = new TextEncoder().encode(salt + password);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function genSalt(){ return uid() + uid(); }
+const ALFA_CODIGO = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+function generarCodigoAleatorio(len=6){
+  let s=''; for(let i=0;i<len;i++) s += ALFA_CODIGO[Math.floor(Math.random()*ALFA_CODIGO.length)];
+  return s;
+}
+
+/* ---------- helpers de datos ---------- */
+async function ensureRangosSeed(){
+  const r = await loadKey(KEYS.rangos, null);
+  if(!r){ await saveKey(KEYS.rangos, RANGOS_DEFAULT); }
+}
+async function obtenerRangos(tipo){
+  const r = await loadKey(KEYS.rangos, RANGOS_DEFAULT);
+  return r[tipo] || r["Vivienda"] || RANGOS_DEFAULT["Vivienda"];
+}
+function clasificarNivel(cantidad, rangos){
+  for(const nivel of NIVELES){
+    const [min,max] = rangos[nivel];
+    if(cantidad < min) continue;
+    if(max===null || cantidad<=max) return nivel;
+  }
+  return "Alta";
+}
+async function obtenerListaClientes(){
+  const clientes = await loadKey(KEYS.clientes, []);
+  const usuarios = await loadKey(KEYS.usuarios, []);
+  const locales = clientes.map(c=>c.nombreLocal);
+  const usrCli = usuarios.filter(u=>u.rol==='Cliente').map(u=>u.nombre);
+  return [...new Set([...locales, ...usrCli])].sort();
+}
+async function obtenerTipoCliente(nombre){
+  const clientes = await loadKey(KEYS.clientes, []);
+  const c = clientes.find(c=>c.nombreLocal.toLowerCase()===String(nombre).toLowerCase());
+  return c && c.tipo ? c.tipo : "Vivienda";
+}
+function resizeImage(dataUrl, maxW, quality){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const scale = Math.min(1, maxW / img.width);
+      const c = document.createElement('canvas');
+      c.width = img.width*scale; c.height = img.height*scale;
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      resolve(c.toDataURL('image/jpeg', quality||0.7));
+    };
+    img.src = dataUrl;
+  });
+}
+function fileToDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = ()=>resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+/* =========================================================================
+   RENDER PRINCIPAL
+   ========================================================================= */
+async function render(){
+  const app = document.getElementById('app');
+  if(!session){ app.innerHTML = await renderAuth(); wireAuthEvents(); return; }
+  app.innerHTML = await renderShell();
+  wireShellEvents();
+}
+
+/* ---------------------------- AUTENTICACIÓN ---------------------------- */
+async function renderAuth(){
+  return `
+  <div class="auth-wrap">
+    <div class="auth-brand">
+      <img src="tortuga.png" alt="" style="height:64px;margin-bottom:10px;" onerror="ocultarSiNoCarga(this)">
+      <div class="tag">Los Ángeles Corporativo</div>
+      <h1>Control de Plagas &amp; Fumigación</h1>
+      <div class="hazard"></div>
+      <p class="muted" style="max-width:460px;">Plataforma para técnicos y clientes: registro de servicios, clasificación
+      automática del nivel de infestación, catálogo de plagas y productos, evidencia fotográfica, firma de conformidad
+      y mensajería interna.</p>
+      <div class="card" style="margin-top:26px;">
+        <h4 style="color:var(--amber);">En esta plataforma puedes</h4>
+        <p class="muted" style="margin:6px 0;">🧾 Registrar cada servicio con nivel de infestación calculado automáticamente.</p>
+        <p class="muted" style="margin:6px 0;">📊 Consultar el historial y la tendencia mensual por cliente.</p>
+        <p class="muted" style="margin:6px 0;">💬 Comunicarte directamente entre técnicos y clientes.</p>
+      </div>
+      <div class="acc" style="margin-top:18px;">
+        <button type="button" class="acc-header" onclick="toggleAcc(this)"><span class="chev">▶</span> 📄 Términos y Condiciones de Uso</button>
+        <div class="acc-body"><div class="acc-body-inner" style="font-size:.85rem;">
+          <p><b>1. Objeto.</b> Esta plataforma administra servicios de control de plagas: registro de clientes, inspecciones, reportes, evidencias fotográficas e historial.</p>
+          <p><b>2. Uso responsable.</b> Prohibido suplantar identidad, acceder sin autorización, alterar datos de terceros o introducir código malicioso.</p>
+          <p><b>3. Cuentas.</b> El usuario es responsable de su contraseña y de la actividad realizada desde su cuenta.</p>
+          <p><b>4. Veracidad.</b> La información capturada (clientes, reportes, evidencias) debe ser verídica y contar con la autorización correspondiente.</p>
+          <p><b>5. Propiedad intelectual.</b> El contenido de la plataforma pertenece a Los Ángeles Corporativo.</p>
+          <p><b>6. Disponibilidad.</b> El servicio puede presentar interrupciones por mantenimiento o causas ajenas al administrador.</p>
+          <p><b>7. Protección de datos.</b> La información se usa solo para administrar los servicios ofrecidos.</p>
+          <p><b>8. Responsabilidad.</b> La plataforma es una herramienta de apoyo; no responde por datos incorrectos capturados por el usuario.</p>
+          <p><b>9–12. Suspensión, modificaciones, legislación y contacto.</b> Las cuentas que incumplan estos términos podrán suspenderse; los términos pueden actualizarse y se rigen por la legislación vigente de México, foro Tabasco.</p>
+        </div></div>
+      </div>
+    </div>
+    <div class="auth-form-wrap">
+      <div style="width:100%;max-width:420px;">
+        <div class="tabs-row">
+          <button class="tab active" id="tabLogin" onclick="switchAuthTab('login')">🔐 Iniciar sesión</button>
+          <button class="tab" id="tabRegistro" onclick="switchAuthTab('registro')">📝 Crear cuenta</button>
+        </div>
+        <div id="authPanel"></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function switchAuthTab(which){
+  document.getElementById('tabLogin').classList.toggle('active', which==='login');
+  document.getElementById('tabRegistro').classList.toggle('active', which==='registro');
+  document.getElementById('authPanel').innerHTML = which==='login' ? loginFormHtml() : registroFormHtml();
+  wirePanelEvents(which);
+}
+function loginFormHtml(){
+  return `
+    <h3>Bienvenido de nuevo</h3>
+    <p class="muted" style="margin-top:-6px;">Ingresa tus credenciales para acceder al panel.</p>
+    <form id="formLogin">
+      <div class="field"><label>Correo electrónico</label><input type="email" id="loginCorreo" placeholder="ejemplo@empresa.com" required></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="loginPass" placeholder="••••••••" required></div>
+      <button type="submit" class="primary" style="width:100%;">Ingresar al sistema</button>
+    </form>`;
+}
+function registroFormHtml(){
+  const opts = TIPOS_ESTABLECIMIENTO; // no se usa aquí, placeholder por si se requiere
+  return `
+    <h3>Solicitud de acceso</h3>
+    <p class="muted" style="margin-top:-6px;">Registra tus datos para habilitar tu cuenta.</p>
+    <form id="formRegistro">
+      <div class="field"><label>Nombre completo / Razón social</label><input type="text" id="regNombre" required></div>
+      <div class="field"><label>Correo electrónico</label><input type="email" id="regCorreo" required></div>
+      <div class="grid2">
+        <div class="field"><label>Teléfono móvil (10 dígitos)</label><input type="text" id="regTelefono"></div>
+        <div class="field"><label>Tipo de usuario</label>
+          <select id="regRol">
+            <option value="Cliente">Cliente</option>
+            <option value="Técnico">Técnico</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Código de técnico (opcional, solo Cliente)</label><input type="text" id="regCodigo" placeholder="Ej. AB12CD"></div>
+      <div class="grid2">
+        <div class="field"><label>Contraseña</label><input type="password" id="regPass1" required></div>
+        <div class="field"><label>Confirmar contraseña</label><input type="password" id="regPass2" required></div>
+      </div>
+      <button type="submit" class="primary" style="width:100%;">Registrar cuenta</button>
+    </form>`;
+}
+function wireAuthEvents(){
+  document.getElementById('authPanel').innerHTML = loginFormHtml();
+  wirePanelEvents('login');
+}
+function wirePanelEvents(which){
+  if(which==='login'){
+    document.getElementById('formLogin').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const correo = document.getElementById('loginCorreo').value.trim().toLowerCase();
+      const pass = document.getElementById('loginPass').value;
+      const usuarios = await loadKey(KEYS.usuarios, []);
+      const u = usuarios.find(u=>u.correo===correo);
+      if(!u){ toast(TIENE_CLOUD_STORAGE ? 'No existe una cuenta con ese correo.' : 'No existe esa cuenta en este navegador (el guardado es local a cada navegador).', true); return; }
+      const h = await hashPass(pass, u.salt);
+      if(h !== u.passHash){ toast('Contraseña incorrecta.', true); return; }
+      session = {id:u.id, nombre:u.nombre, correo:u.correo, rol:u.rol, telefono:u.telefono};
+      navTecnico = "Inicio"; navCliente = "Inicio";
+      render();
+    });
+  } else {
+    document.getElementById('formRegistro').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const nombre = document.getElementById('regNombre').value.trim();
+      const correo = document.getElementById('regCorreo').value.trim().toLowerCase();
+      const telefono = document.getElementById('regTelefono').value.trim();
+      const rol = document.getElementById('regRol').value;
+      const codigo = document.getElementById('regCodigo').value.trim().toUpperCase();
+      const pass1 = document.getElementById('regPass1').value;
+      const pass2 = document.getElementById('regPass2').value;
+
+      if(!nombre || !correo || !pass1){ toast('Completa los campos obligatorios.', true); return; }
+      if(!correo.includes('@') || !correo.split('@').pop().includes('.')){ toast('Correo inválido.', true); return; }
+      if(telefono && !/^\d{10}$/.test(telefono)){ toast('El teléfono debe tener 10 dígitos.', true); return; }
+      if(pass1.length < 6){ toast('La contraseña debe tener al menos 6 caracteres.', true); return; }
+      if(pass1 !== pass2){ toast('Las contraseñas no coinciden.', true); return; }
+
+      const usuarios = await loadKey(KEYS.usuarios, []);
+      if(usuarios.some(u=>u.correo===correo)){ toast('Ese correo ya está registrado.', true); return; }
+
+      let tecnicoAsignado = null;
+      if(rol==='Cliente' && codigo){
+        const tec = usuarios.find(u=>u.rol==='Técnico' && u.codigoTecnico===codigo);
+        if(!tec){ toast('El código de técnico no es válido.', true); return; }
+        tecnicoAsignado = tec.nombre;
+      }
+      let salt, passHash;
+      try{
+        salt = genSalt();
+        passHash = await hashPass(pass1, salt);
+      }catch(err){
+        console.error(err);
+        toast('Tu navegador no permite cifrar la contraseña aquí. Prueba abriendo el archivo dentro de Claude o en un navegador moderno.', true);
+        return;
+      }
+      const nuevo = {id:uid(), nombre, correo, telefono, rol, salt, passHash, codigoTecnico:null};
+      usuarios.push(nuevo);
+      const ok = await saveKey(KEYS.usuarios, usuarios);
+      if(!ok){ toast('No se pudo guardar tu cuenta. Intenta de nuevo.', true); return; }
+
+      // Verificación real: releemos para confirmar que el usuario quedó persistido
+      const verificacion = await loadKey(KEYS.usuarios, []);
+      if(!verificacion.some(u=>u.correo===correo)){
+        toast('El guardado no se confirmó. Vuelve a intentar el registro.', true);
+        return;
+      }
+
+      if(tecnicoAsignado){
+        const clientes = await loadKey(KEYS.clientes, []);
+        if(!clientes.some(c=>c.nombreLocal===nombre)){
+          clientes.push({id:uid(), nombreLocal:nombre, responsable:nombre, telefono, direccion:'', tecnicoAsignado, tipo:'Vivienda'});
+          await saveKey(KEYS.clientes, clientes);
+        }
+      }
+      toast('Cuenta creada y confirmada. Ahora puedes iniciar sesión.');
+      switchAuthTab('login');
+      const loginCorreoEl = document.getElementById('loginCorreo');
+      if(loginCorreoEl) loginCorreoEl.value = correo;
+    });
+  }
+}
+
+/* ------------------------------ SHELL APP ------------------------------ */
+async function renderShell(){
+  const isTec = session.rol === 'Técnico';
+  const tabs = isTec
+    ? ["Inicio","Productos Químicos","Registrar Servicio","Gestión Clientes","Historial","Configurar Rangos","Ubicación","Mensajería"]
+    : ["Inicio","Productos Químicos","Mis Servicios","Nivel de Infestación","Mensajería"];
+  const currentTab = isTec ? navTecnico : navCliente;
+
+  return `
+    <div class="topbar">
+      <div class="brandmini"><img src="tortuga.png" alt="" style="height:26px;width:26px;object-fit:contain;border-radius:6px;" onerror="ocultarSiNoCarga(this)"><span class="dot"></span> Gestión de Fumigaciones</div>
+      <div class="userchip">
+        <div style="text-align:right;">
+          <div class="name">${session.nombre}</div>
+          <div class="role">${session.rol}</div>
+        </div>
+        <button class="ghost" onclick="logout()">Salir</button>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      ${tabs.map(t=>`<button class="tab ${t===currentTab?'active':''}" onclick="goTab('${t}')">${tabIcon(t)} ${t}</button>`).join('')}
+    </div>
+    <div class="content" id="mainContent">Cargando…</div>
+  `;
+}
+function tabIcon(t){
+  const m = {"Inicio":"🏠","Productos Químicos":"🧪","Registrar Servicio":"➕","Gestión Clientes":"👥",
+    "Historial":"📊","Configurar Rangos":"⚙️","Ubicación":"📍","Mensajería":"💬","Mis Servicios":"📋","Nivel de Infestación":"📈"};
+  return m[t] || "";
+}
+function logout(){ session=null; render(); }
+function goTab(t){
+  if(session.rol==='Técnico') navTecnico=t; else navCliente=t;
+  render();
+}
+async function wireShellEvents(){
+  const el = document.getElementById('mainContent');
+  const tab = session.rol==='Técnico' ? navTecnico : navCliente;
+  el.innerHTML = await renderTabContent(tab);
+  wireTabEvents(tab);
+}
+
+async function renderTabContent(tab){
+  switch(tab){
+    case 'Inicio': return catalogoPlagasHtml();
+    case 'Productos Químicos': return catalogoQuimicosHtml();
+    case 'Registrar Servicio': return await registrarServicioHtml();
+    case 'Gestión Clientes': return await gestionClientesHtml();
+    case 'Historial': return await historialHtml();
+    case 'Configurar Rangos': return await configurarRangosHtml();
+    case 'Ubicación': return ubicacionHtml();
+    case 'Mensajería': return await mensajeriaHtml();
+    case 'Mis Servicios': return await misServiciosHtml();
+    case 'Nivel de Infestación': return await nivelInfestacionHtml(session.nombre);
+    default: return '';
+  }
+}
+async function wireTabEvents(tab){
+  if(tab==='Registrar Servicio') wireRegistrarServicio();
+  if(tab==='Gestión Clientes') wireGestionClientes();
+  if(tab==='Configurar Rangos') wireConfigurarRangos();
+  if(tab==='Ubicación') wireUbicacion();
+  if(tab==='Mensajería') wireMensajeria();
+  if(tab==='Nivel de Infestación') await wireGraficaInfestacion(session.nombre);
+}
+
+/* --------------------------- CATÁLOGO DE PLAGAS -------------------------- */
+function catalogoPlagasHtml(){
+  return `
+  <h2>🪳 Enciclopedia de Plagas</h2>
+  <p class="muted">Ficha técnica de identificación y control de las especies más comunes.</p>
+  <div class="hazard"></div>
+  <div class="grid2">
+    <div class="card">
+      <img src="cucaracha_americana.jpg" alt="Cucaracha americana" style="width:100%;max-height:640px;object-fit:contain;background:#fdfaf3;border-radius:10px;border:1px solid var(--border);margin-bottom:12px;" onerror="ocultarSiNoCarga(this)">
+      <h3>Cucaracha americana <span class="muted">(Periplaneta americana)</span></h3>
+      <div class="grid2" style="margin-bottom:8px;">
+        <div class="metric"><div class="n">3.5–5 cm</div><div class="muted">Tamaño adulto</div></div>
+        <div class="metric"><div class="n">5.4 km/h</div><div class="muted">Velocidad máx.</div></div>
+      </div>
+      ${acc('📌 Características', '<p class="muted">Marrón rojizo con banda amarillenta tras la cabeza; alas desarrolladas capaces de vuelos cortos.</p>')}
+      ${acc('🏠 Hábitat', '<p class="muted">Lugares cálidos, húmedos y oscuros: alcantarillas, sótanos, cuartos de máquinas, cocinas y baños.</p>')}
+      ${acc('🍞 Alimentación &amp; 🔄 Ciclo', '<p class="muted">Omnívora y carroñera. Huevos en ootecas (14–16 por cápsula); ninfa muda 10–13 veces; adulto vive 1–2 años.</p>')}
+      ${acc('⚠️ Sanidad &amp; 🛡️ Prevención', '<p class="muted">Transmite Salmonella, E. coli, hongos y parásitos; sus mudas provocan alergias. Prevención: almacenamiento hermético, eliminación de residuos, sellado de grietas.</p>')}
+    </div>
+    <div class="card">
+      <img src="cucaracha_alemana.jpg" alt="Cucaracha alemana" style="width:100%;max-height:640px;object-fit:contain;background:#fdfaf3;border-radius:10px;border:1px solid var(--border);margin-bottom:12px;" onerror="ocultarSiNoCarga(this)">
+      <h3>Cucaracha alemana <span class="muted">(Blattella germanica)</span></h3>
+      <div class="grid2" style="margin-bottom:8px;">
+        <div class="metric"><div class="n">1.1–1.6 cm</div><div class="muted">Tamaño adulto</div></div>
+        <div class="metric"><div class="n">4–5 km/h</div><div class="muted">Velocidad máx.</div></div>
+      </div>
+      ${acc('📌 Características', '<p class="muted">Marrón claro o amarillo café, con dos líneas negras paralelas sobre el pronoto.</p>')}
+      ${acc('🏠 Hábitat', '<p class="muted">Cocinas, restaurantes, despensas, electrodomésticos y baños; se esconde en rendijas de 2 mm.</p>')}
+      ${acc('🍞 Alimentación &amp; 🔄 Ciclo', '<p class="muted">Restos de comida, azúcares y grasas. Ooteca de 30–40 huevos por ciclo.</p>')}
+      ${acc('⚠️ Sanidad &amp; 🛡️ Control', '<p class="muted">Dispersa Salmonella y E. coli; alta resistencia a insecticidas. Control: limpieza estricta y sellado de rendijas.</p>')}
+    </div>
+  </div>`;
+}
+
+/* ----------------------- CATÁLOGO DE PRODUCTOS QUÍMICOS ------------------ */
+function badgeToxi(clase){
+  const d = CLASE_TOXI[clase];
+  if(!d) return `<span class="muted">Sin clasificación toxicológica.</span>`;
+  return `<div class="badge ${d.cls}">${d.icono} Franja ${clase} — ${d.desc} · ${d.cat}</div>`;
+}
+function catalogoQuimicosHtml(){
+  return `
+  <h2>🧪 Catálogo de Productos Químicos</h2>
+  <p class="muted">Fichas técnicas de los productos usados en los servicios de control de plagas.</p>
+  <div class="hazard"></div>
+  <div class="acc" style="margin-bottom:18px;">
+    <button type="button" class="acc-header" onclick="toggleAcc(this)"><span class="chev">▶</span> 📖 Guía de clasificación toxicológica (franjas de color)</button>
+    <div class="acc-body"><div class="acc-body-inner">
+      ${Object.entries(CLASE_TOXI).map(([clase,d])=>`
+        <div class="badge ${d.cls}" style="display:flex;width:fit-content;">${d.icono} Franja ${clase} — ${d.desc} (${d.cat})</div>
+      `).join('')}
+    </div></div>
+  </div>
+
+  <div class="card">
+    <img src="demand_25cs.jpg" alt="Demand 2.5 CS" style="width:100%;max-height:640px;object-fit:contain;background:#fdfaf3;border-radius:10px;border:1px solid var(--border);margin-bottom:12px;" onerror="ocultarSiNoCarga(this)">
+    <div class="badge green">🟢 Franja Verde</div>
+    <h3>Demand® 2.5 CS <span class="muted">(Syngenta)</span></h3>
+    <p class="muted">Lambda-cihalotrina 2.5% en suspensión encapsulada (tecnología iCAP®) de liberación gradual. Piretroide tipo II, grupo IRAC 3A.</p>
+    ${acc('⚙️ Modo de acción', '<p class="muted">Actúa por contacto e ingestión sobre los canales de sodio del sistema nervioso: hiperactividad, parálisis y muerte del insecto.</p>')}
+    ${acc('🐜 Plagas que controla', '<p class="muted">Cucarachas, hormigas, moscas, mosquitos, pulgas, arañas, alacranes, avispas, escarabajos, grillos, ciempiés, milpiés, pescadito de plata.</p>')}
+    ${acc('🏢 Lugares de aplicación', '<p class="muted">Viviendas, restaurantes, hoteles, hospitales, escuelas, oficinas, bodegas e industria alimentaria; interiores y exteriores.</p>')}
+    ${acc('⚠️ Precauciones', '<p class="muted">Mantener fuera del alcance de niños y mascotas; evitar contaminar alimentos; altamente tóxico para organismos acuáticos.</p>')}
+  </div>
+
+  <div class="card">
+    <img src="termidor_25ce.jpg" alt="Termidor 25 CE" style="width:100%;max-height:640px;object-fit:contain;background:#fdfaf3;border-radius:10px;border:1px solid var(--border);margin-bottom:12px;" onerror="ocultarSiNoCarga(this)">
+    <div class="badge green">🟢 Franja Verde</div>
+    <h3>Termidor® 25 CE <span class="muted">(BASF)</span></h3>
+    <p class="muted">Fipronil 3% p/p (25 g/L), concentrado emulsionable, grupo químico fenilpirazoles. Especializado en control de termitas.</p>
+    ${acc('🎯 Para qué sirve', '<p class="muted">Control y prevención de termitas subterráneas, de madera seca y de nidos acartonados; también registrado para cucarachas, hormigas y otras plagas urbanas.</p>')}
+    ${acc('⚙️ Modo de acción', '<p class="muted">Efecto de transferencia: una termita en contacto lleva partículas del producto al interior de la colonia, afectando a otros individuos.</p>')}
+    ${acc('💧 Dilución para termitas', '<p class="muted">2 L de producto por cada 100 L de agua (emulsión al 2%) o 4 L por 100 L (emulsión al 4%), según el tratamiento.</p>')}
+    ${acc('⚠️ Precauciones', '<p class="muted">Aplicación exclusiva de profesionales en control de plagas urbanas, conforme a etiqueta.</p>')}
+  </div>
+
+  <div class="card">
+    <img src="ddvp_500u.jpg" alt="DDVP 500 U" style="width:100%;max-height:640px;object-fit:contain;background:#fdfaf3;border-radius:10px;border:1px solid var(--border);margin-bottom:12px;" onerror="ocultarSiNoCarga(this)">
+    <div class="badge red">🔴 Franja Roja</div>
+    <h3>DDVP® 500 U <span class="muted">(Agroquímica Tridente)</span></h3>
+    <p class="muted">Diclorvos (organofosforado) al 47.50% p/p, equivalente a 500 g de I.A./L. Categoría toxicológica del fabricante: 2 — Peligro. Uso urbano exclusivo para aplicadores de plaguicidas.</p>
+    ${acc('🐜 Plagas que controla', '<p class="muted">Cucaracha alemana y americana, alacranes, polilla de la alfombra y de tapete.</p>')}
+    ${acc('⚙️ Modo de acción', '<p class="muted">Inhibe la acetilcolinesterasa → acumulación de acetilcolina → alteración nerviosa → parálisis → muerte.</p>')}
+    ${acc('💧 Dosis de aspersión', '<p class="muted">10–20 mL de producto por cada litro de agua, según etiqueta vigente.</p>')}
+    ${acc('⚠️ Seguridad', '<p class="muted">Evitar inhalar vapores, contacto con piel y ojos; retirar personas, mascotas y alimentos del área antes de aplicar; usar el EPP indicado.</p>')}
+  </div>`;
+}
+
+/* --------------------------- REGISTRAR SERVICIO -------------------------- */
+async function registrarServicioHtml(){
+  const clientes = await obtenerListaClientes();
+  const primerCliente = clientes[0] || null;
+  const tipo = primerCliente ? await obtenerTipoCliente(primerCliente) : "Vivienda";
+  const rangos = await obtenerRangos(tipo);
+  return `
+  <h2>📝 Registrar Servicio de Fumigación</h2>
+  <div class="card">
+    <div class="field">
+      <label>Cliente / Local</label>
+      <select id="rsCliente">
+        ${clientes.length ? clientes.map(c=>`<option value="${c}">${c}</option>`).join('') : '<option>Sin clientes</option>'}
+      </select>
+    </div>
+    <div id="rsRangosInfo" class="card" style="background:var(--bg-2);">
+      ${rangosInfoHtml(tipo, rangos)}
+    </div>
+
+    <div class="grid2">
+      <div>
+        <div class="field"><label>Tipo de plaga</label><input type="text" id="rsPlaga" placeholder="Ej. Cucaracha alemana, roedores"></div>
+        <div class="field"><label>Tratamiento aplicado / productos</label><textarea id="rsTratamiento" rows="3" placeholder="Ej. Aplicación de gel específico y aspersión perimetral."></textarea></div>
+        <div class="field"><label>Cantidad de plagas observadas</label><input type="number" min="0" step="1" id="rsCantidad" value="0"></div>
+      </div>
+      <div>
+        <div class="field"><label>Estatus del servicio</label>
+          <select id="rsEstatus"><option>Completado</option><option>En Proceso</option><option>Seguimiento Requerido</option></select>
+        </div>
+        <div class="field"><label>Técnico responsable</label><input type="text" id="rsTecnico" value="${session.nombre}"></div>
+        <div class="field"><label>Evidencia fotográfica</label><input type="file" id="rsEvidencia" accept="image/*"></div>
+        <div class="field"><label>Certificado de fumigación (opcional)</label><input type="file" id="rsCertificado" accept="application/pdf,image/*">
+          <small class="help">Puedes anexar una copia escaneada o fotografiada del certificado emitido para este servicio.</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="hazard"></div>
+    <h4>✍️ Conformidad del encargado</h4>
+    <div class="field"><label>Nombre del encargado que recibe el servicio</label><input type="text" id="rsEncargado" placeholder="Ej. María López"></div>
+    <label>Firma (dibuja con el mouse o el dedo)</label>
+    <canvas id="firmaCanvas" class="firma" width="500" height="160"></canvas><br><br>
+    <button type="button" class="ghost" id="btnLimpiarFirma">🧹 Limpiar firma</button>
+
+    <div class="hazard"></div>
+    <button class="primary" id="btnGuardarServicio" style="width:100%;">Guardar reporte de servicio</button>
+  </div>
+
+  <div class="card"><div id="rsChartWrap"></div></div>
+  `;
+}
+function rangosInfoHtml(tipo, rangos){
+  return `<p class="muted" style="margin-top:0;">Rangos de infestación para <b>${tipo}</b>:</p>` +
+    NIVELES.map(n=>{
+      const [min,max]=rangos[n];
+      const rango = max===null ? `Más de ${min-1}` : `${min} a ${max}`;
+      const [icono,desc] = DESCRIPCION_NIVEL[n];
+      return `<p class="muted" style="margin:4px 0;">${icono} <b>${n}</b> (${rango}): ${desc}</p>`;
+    }).join('');
+}
+function wireRegistrarServicio(){
+  const canvas = document.getElementById('firmaCanvas');
+  firmaCtx = canvas.getContext('2d');
+  firmaCtx.fillStyle = '#fff'; firmaCtx.fillRect(0,0,canvas.width,canvas.height);
+  firmaCtx.strokeStyle = '#111'; firmaCtx.lineWidth = 2.4; firmaCtx.lineCap = 'round';
+  firmaTieneTrazo = false;
+
+  function pos(e){
+    const r = canvas.getBoundingClientRect();
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+    return [cx * canvas.width / r.width, cy * canvas.height / r.height];
+  }
+  function start(e){ e.preventDefault(); firmaDrawing = true; const [x,y]=pos(e); firmaCtx.beginPath(); firmaCtx.moveTo(x,y); }
+  function move(e){ if(!firmaDrawing) return; e.preventDefault(); const [x,y]=pos(e); firmaCtx.lineTo(x,y); firmaCtx.stroke(); firmaTieneTrazo = true; }
+  function end(){ firmaDrawing = false; }
+  canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', end);
+  canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', move); canvas.addEventListener('touchend', end);
+
+  document.getElementById('btnLimpiarFirma').addEventListener('click', ()=>{
+    firmaCtx.fillStyle = '#fff'; firmaCtx.fillRect(0,0,canvas.width,canvas.height); firmaTieneTrazo = false;
+  });
+
+  document.getElementById('rsCliente').addEventListener('change', async (e)=>{
+    const tipo = await obtenerTipoCliente(e.target.value);
+    const rangos = await obtenerRangos(tipo);
+    document.getElementById('rsRangosInfo').innerHTML = rangosInfoHtml(tipo, rangos);
+  });
+
+  document.getElementById('btnGuardarServicio').addEventListener('click', async ()=>{
+    const cliente = document.getElementById('rsCliente').value;
+    const plaga = document.getElementById('rsPlaga').value.trim();
+    const tratamiento = document.getElementById('rsTratamiento').value.trim();
+    const cantidad = parseInt(document.getElementById('rsCantidad').value || '0', 10);
+    const estatus = document.getElementById('rsEstatus').value;
+    const tecnico = document.getElementById('rsTecnico').value.trim() || session.nombre;
+    const encargado = document.getElementById('rsEncargado').value.trim();
+    const fileInput = document.getElementById('rsEvidencia');
+    const certInput = document.getElementById('rsCertificado');
+
+    if(!cliente || cliente==='Sin clientes'){ toast('Registra al menos un cliente primero.', true); return; }
+    if(!encargado){ toast('Indica el nombre del encargado que firma la conformidad.', true); return; }
+    if(!firmaTieneTrazo){ toast('Falta la firma del encargado.', true); return; }
+
+    let evidenciaBase64 = '';
+    if(fileInput.files[0]){
+      const raw = await fileToDataUrl(fileInput.files[0]);
+      evidenciaBase64 = await resizeImage(raw, 640, 0.7);
+    }
+
+    let certificadoBase64 = '', certificadoNombre = '';
+    if(certInput.files[0]){
+      const cf = certInput.files[0];
+      if(cf.size > 4 * 1024 * 1024){
+        toast('El certificado pesa demasiado (máx. ~4 MB). No se adjuntó.', true);
+      } else if(cf.type.startsWith('image/')){
+        const raw = await fileToDataUrl(cf);
+        certificadoBase64 = await resizeImage(raw, 900, 0.75);
+        certificadoNombre = cf.name.replace(/\.[^.]+$/, '') + '.jpg';
+      } else {
+        certificadoBase64 = await fileToDataUrl(cf);
+        certificadoNombre = cf.name;
+      }
+    }
+    const firmaBase64 = canvas.toDataURL('image/png');
+
+    const tipo = await obtenerTipoCliente(cliente);
+    const rangos = await obtenerRangos(tipo);
+    const nivel = clasificarNivel(cantidad, rangos);
+
+    const reportes = await loadKey(KEYS.reportes, []);
+    reportes.unshift({
+      id: uid(), cliente, tecnico, plaga, tratamiento, estatus,
+      fecha: new Date().toISOString(), evidencia: evidenciaBase64,
+      nivel, cantidad, encargado, firma: firmaBase64,
+      certificado: certificadoBase64, certificadoNombre
+    });
+    await saveKey(KEYS.reportes, reportes);
+    toast(`Servicio registrado. Nivel de infestación: ${nivel} (${cantidad} observadas).`);
+    render();
+  });
+
+  wireGraficaInfestacion(null, 'rsChartWrap');
+}
+
+/* ------------------------------ GESTIÓN CLIENTES -------------------------- */
+async function gestionClientesHtml(){
+  const usuarios = await loadKey(KEYS.usuarios, []);
+  const me = usuarios.find(u=>u.id===session.id);
+  const codigo = me ? me.codigoTecnico : null;
+  const clientes = await loadKey(KEYS.clientes, []);
+  return `
+  <h2>👥 Gestión de Clientes y Locales</h2>
+  <div class="card">
+    <h4>🔑 Tu código para nuevos clientes</h4>
+    <p class="muted">Compártelo con clientes nuevos: al registrarse como Cliente pueden anexarlo y quedan agregados aquí automáticamente.</p>
+    <button id="btnGenCodigo">${codigo ? '🔄 Regenerar código' : '✨ Generar mi código'}</button>
+    <div style="margin-top:12px;">${codigo ? `<span class="codebox">${codigo}</span>` : '<span class="muted">Todavía no tienes un código generado.</span>'}</div>
+  </div>
+
+  <div class="card">
+    <div class="acc">
+      <button type="button" class="acc-header" onclick="toggleAcc(this)"><span class="chev">▶</span> ➕ Registrar nuevo local o cliente</button>
+      <div class="acc-body"><div class="acc-body-inner">
+        <div class="field" style="margin-top:8px;"><label>Nombre del local / empresa</label><input type="text" id="ncNombre"></div>
+        <div class="field"><label>Persona responsable</label><input type="text" id="ncResponsable"></div>
+        <div class="field"><label>Teléfono de contacto</label><input type="text" id="ncTelefono"></div>
+        <div class="field"><label>Dirección completa</label><input type="text" id="ncDireccion"></div>
+        <div class="field"><label>Tipo de establecimiento</label>
+          <select id="ncTipo">${TIPOS_ESTABLECIMIENTO.map(t=>`<option>${t}</option>`).join('')}</select>
+        </div>
+        <button class="primary" id="btnGuardarCliente">Guardar cliente</button>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h4>Listado de clientes registrados</h4>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Local/Empresa</th><th>Responsable</th><th>Teléfono</th><th>Dirección</th><th>Técnico asignado</th><th>Tipo</th></tr></thead>
+      <tbody>
+        ${clientes.length ? clientes.map(c=>`<tr><td>${c.nombreLocal}</td><td>${c.responsable||''}</td><td>${c.telefono||''}</td><td>${c.direccion||''}</td><td>${c.tecnicoAsignado||''}</td><td>${c.tipo}</td></tr>`).join('') : '<tr><td colspan="6" class="muted">No hay clientes registrados todavía.</td></tr>'}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+function wireGestionClientes(){
+  document.getElementById('btnGenCodigo').addEventListener('click', async ()=>{
+    const usuarios = await loadKey(KEYS.usuarios, []);
+    const idx = usuarios.findIndex(u=>u.id===session.id);
+    if(idx<0){ toast('No se encontró tu cuenta.', true); return; }
+    let codigo;
+    do{ codigo = generarCodigoAleatorio(); } while(usuarios.some(u=>u.codigoTecnico===codigo));
+    usuarios[idx].codigoTecnico = codigo;
+    await saveKey(KEYS.usuarios, usuarios);
+    toast('Código generado: ' + codigo);
+    render();
+  });
+  document.getElementById('btnGuardarCliente').addEventListener('click', async ()=>{
+    const nombreLocal = document.getElementById('ncNombre').value.trim();
+    if(!nombreLocal){ toast('El nombre del local es obligatorio.', true); return; }
+    const clientes = await loadKey(KEYS.clientes, []);
+    if(clientes.some(c=>c.nombreLocal===nombreLocal)){ toast('Ese local ya existe.', true); return; }
+    clientes.push({
+      id: uid(), nombreLocal,
+      responsable: document.getElementById('ncResponsable').value.trim(),
+      telefono: document.getElementById('ncTelefono').value.trim(),
+      direccion: document.getElementById('ncDireccion').value.trim(),
+      tecnicoAsignado: session.nombre,
+      tipo: document.getElementById('ncTipo').value
+    });
+    await saveKey(KEYS.clientes, clientes);
+    toast('Cliente registrado con éxito.');
+    render();
+  });
+}
+
+/* -------------------------------- HISTORIAL -------------------------------- */
+async function historialHtml(){
+  const reportes = await loadKey(KEYS.reportes, []);
+  return `
+  <h2>📊 Historial General de Reportes</h2>
+  <div class="card">
+    <div class="table-scroll"><table>
+      <thead><tr><th>Cliente</th><th>Técnico</th><th>Plaga</th><th>Estatus</th><th>Nivel</th><th>Cant.</th><th>Fecha</th></tr></thead>
+      <tbody>
+        ${reportes.length ? reportes.map(r=>`
+          <tr><td>${r.cliente}</td><td>${r.tecnico}</td><td>${r.plaga}</td><td>${r.estatus}</td>
+          <td>${DESCRIPCION_NIVEL[r.nivel][0]} ${r.nivel}</td><td>${r.cantidad}</td><td>${new Date(r.fecha).toLocaleString('es-MX')}</td></tr>
+        `).join('') : '<tr><td colspan="7" class="muted">No hay servicios registrados en el historial.</td></tr>'}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+
+/* --------------------------- CONFIGURAR RANGOS ----------------------------- */
+async function configurarRangosHtml(){
+  return `
+  <h2>⚙️ Configurar Rangos de Infestación</h2>
+  <p class="muted">Define a partir de cuántas plagas observadas se considera Baja, Media o Alta, según el tipo de lugar.</p>
+  <div class="card">
+    <div class="field"><label>Tipo de establecimiento</label>
+      <select id="crTipo">${TIPOS_ESTABLECIMIENTO.map(t=>`<option>${t}</option>`).join('')}</select>
+    </div>
+    <div id="crForm"></div>
+    <button class="primary" id="crGuardar">💾 Guardar rangos</button>
+  </div>`;
+}
+async function crRenderForm(tipo){
+  const rangos = await obtenerRangos(tipo);
+  document.getElementById('crForm').innerHTML = NIVELES.map(n=>{
+    const [min,max] = rangos[n];
+    const [icono] = DESCRIPCION_NIVEL[n];
+    return `
+    <div class="grid2">
+      <div class="field"><label>${icono} ${n} — desde</label><input type="number" min="0" id="crMin_${n}" value="${min}"></div>
+      <div class="field"><label>${icono} ${n} — hasta</label>${n==='Alta' ? '<input type="text" value="Sin límite" disabled>' : `<input type="number" min="0" id="crMax_${n}" value="${max}">`}</div>
+    </div>`;
+  }).join('');
+}
+function wireConfigurarRangos(){
+  const sel = document.getElementById('crTipo');
+  crRenderForm(sel.value);
+  sel.addEventListener('change', ()=>crRenderForm(sel.value));
+  document.getElementById('crGuardar').addEventListener('click', async ()=>{
+    const tipo = sel.value;
+    const rangosAll = await loadKey(KEYS.rangos, RANGOS_DEFAULT);
+    const nuevo = {};
+    NIVELES.forEach(n=>{
+      const min = parseInt(document.getElementById(`crMin_${n}`).value||'0',10);
+      const max = n==='Alta' ? null : parseInt(document.getElementById(`crMax_${n}`).value||'0',10);
+      nuevo[n] = [min,max];
+    });
+    rangosAll[tipo] = nuevo;
+    await saveKey(KEYS.rangos, rangosAll);
+    toast(`Rangos actualizados para "${tipo}".`);
+  });
+}
+
+/* -------------------------------- UBICACIÓN --------------------------------- */
+function ubicacionHtml(){
+  return `
+  <h2>📍 Geolocalización y Control de Servicios</h2>
+  <p class="muted">Tu navegador pedirá permiso para compartir tu ubicación. Acepta el permiso para verla en el mapa.</p>
+  <div class="card">
+    <div id="geoStatus" class="muted" style="margin-bottom:10px;">Solicitando ubicación…</div>
+    <div id="map"></div>
+  </div>`;
+}
+function wireUbicacion(){
+  const statusEl = document.getElementById('geoStatus');
+  if(!navigator.geolocation){ statusEl.textContent = 'Este navegador no soporta geolocalización.'; statusEl.style.color='var(--red)'; return; }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const {latitude:lat, longitude:lon, accuracy} = pos.coords;
+    statusEl.textContent = 'Ubicación obtenida (precisión aprox. ' + Math.round(accuracy) + ' m)';
+    statusEl.style.color = 'var(--green)';
+    const map = L.map('map').setView([lat,lon],16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+    L.marker([lat,lon]).addTo(map).bindPopup('Tu ubicación actual').openPopup();
+    L.circle([lat,lon],{radius:accuracy,color:'#3b9be0',fillColor:'#3b9be0',fillOpacity:.15}).addTo(map);
+  }, err=>{
+    statusEl.textContent = 'No se pudo obtener tu ubicación (' + err.message + '). Revisa los permisos del navegador.';
+    statusEl.style.color = 'var(--red)';
+  }, {enableHighAccuracy:true, timeout:12000, maximumAge:0});
+}
+
+/* -------------------------------- MENSAJERÍA -------------------------------- */
+async function mensajeriaHtml(){
+  const usuarios = await loadKey(KEYS.usuarios, []);
+  const contactos = usuarios.filter(u=>u.nombre!==session.nombre);
+  if(!contactos.length){
+    return `<h2>💬 Mensajería Interna</h2><p class="muted">Aún no hay otros usuarios registrados en la plataforma para chatear.</p>`;
+  }
+  if(!chatContacto) chatContacto = contactos[0].nombre;
+  return `
+  <h2>💬 Mensajería Interna</h2>
+  <div class="card">
+    <div class="field"><label>Selecciona un contacto</label>
+      <select id="msContacto">${contactos.map(c=>`<option value="${c.nombre}" ${c.nombre===chatContacto?'selected':''}>${c.nombre} (${c.rol})</option>`).join('')}</select>
+    </div>
+    <div class="chatbox" id="chatBox"></div>
+    <form id="formChat" style="display:flex;gap:8px;">
+      <input type="text" id="chatInput" placeholder="Escribe tu mensaje..." style="margin-bottom:0;">
+      <button class="primary" type="submit">Enviar</button>
+    </form>
+  </div>`;
+}
+async function pintarChat(){
+  const mensajes = await loadKey(KEYS.mensajes, []);
+  const conv = mensajes.filter(m=>(m.de===session.nombre && m.a===chatContacto) || (m.de===chatContacto && m.a===session.nombre));
+  const box = document.getElementById('chatBox');
+  box.innerHTML = conv.length ? conv.map(m=>{
+    const mine = m.de===session.nombre;
+    const hora = new Date(m.fecha).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="msg ${mine?'mine':'theirs'}"><div class="meta">${m.de} · ${hora}</div>${m.texto}</div>`;
+  }).join('') : '<p class="muted">No hay mensajes previos. ¡Inicia el chat!</p>';
+  box.scrollTop = box.scrollHeight;
+}
+function wireMensajeria(){
+  const sel = document.getElementById('msContacto');
+  if(!sel) return;
+  pintarChat();
+  sel.addEventListener('change', ()=>{ chatContacto = sel.value; pintarChat(); });
+  document.getElementById('formChat').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const input = document.getElementById('chatInput');
+    const texto = input.value.trim();
+    if(!texto) return;
+    const mensajes = await loadKey(KEYS.mensajes, []);
+    mensajes.push({de:session.nombre, a:chatContacto, texto, fecha:new Date().toISOString()});
+    await saveKey(KEYS.mensajes, mensajes);
+    input.value = '';
+    pintarChat();
+  });
+}
+
+/* ------------------------------ VISTA CLIENTE ------------------------------- */
+async function misServiciosHtml(){
+  const reportes = (await loadKey(KEYS.reportes, [])).filter(r=>r.cliente.toLowerCase()===session.nombre.toLowerCase());
+  if(!reportes.length) return `<h2>📋 Historial de Servicios en tu Local</h2><p class="muted">Aún no cuentas con reportes de servicio registrados a tu nombre.</p>`;
+  return `
+  <h2>📋 Historial de Servicios en tu Local</h2>
+  ${reportes.map(r=>`
+    <div class="acc" style="margin-bottom:12px;">
+      <button type="button" class="acc-header" onclick="toggleAcc(this)"><span class="chev">▶</span> ${r.plaga || 'Servicio'} · ${new Date(r.fecha).toLocaleDateString('es-MX')} [${r.estatus}]</button>
+      <div class="acc-body"><div class="acc-body-inner">
+        <p><b>Técnico asignado:</b> ${r.tecnico}</p>
+        <p><b>Tratamiento:</b> ${r.tratamiento || '—'}</p>
+        <p><b>Nivel de infestación:</b> ${DESCRIPCION_NIVEL[r.nivel][0]} ${r.nivel} (${r.cantidad} observadas)</p>
+        ${r.evidencia ? `<img src="${r.evidencia}" style="max-width:280px;border-radius:8px;border:1px solid var(--border);"><br><br>` : ''}
+        ${r.encargado ? `<p><b>Recibió el servicio:</b> ${r.encargado}</p>` : ''}
+        ${r.firma ? `<img src="${r.firma}" style="max-width:280px;border-radius:8px;border:1px solid var(--border);background:#fff;"><br><br>` : ''}
+        ${r.certificado ? `<a href="${r.certificado}" download="${r.certificadoNombre || 'certificado'}"><button type="button">📄 Descargar certificado de fumigación</button></a>` : ''}
+      </div></div>
+    </div>
+  `).join('')}`;
+}
+
+/* --------------------------- GRÁFICA DE INFESTACIÓN -------------------------- */
+async function nivelInfestacionHtml(clienteFiltro){
+  const tipo = await obtenerTipoCliente(clienteFiltro);
+  return `
+  <h2>📈 Nivel de Infestación Mensual</h2>
+  <div class="card">
+    ${rangosInfoHtml(tipo, await obtenerRangos(tipo))}
+    <div id="niYearSel" class="field" style="max-width:220px;margin-top:14px;"></div>
+    <div id="niMetrics" class="grid3" style="margin-bottom:14px;"></div>
+    <canvas id="niChart" height="110"></canvas>
+  </div>`;
+}
+async function wireGraficaInfestacion(clienteFiltro, targetId){
+  const wrapId = targetId || null;
+  const reportes = await loadKey(KEYS.reportes, []);
+  const filtrados = clienteFiltro ? reportes.filter(r=>r.cliente.toLowerCase()===clienteFiltro.toLowerCase()) : reportes;
+  const anios = [...new Set(filtrados.map(r=>new Date(r.fecha).getFullYear()))];
+  const anioActual = new Date().getFullYear();
+  if(!anios.includes(anioActual)) anios.unshift(anioActual);
+  anios.sort((a,b)=>b-a);
+
+  function pintar(anio){
+    const meses = Array.from({length:12},(_,i)=>i);
+    const datos = {Baja:Array(12).fill(0), Media:Array(12).fill(0), Alta:Array(12).fill(0)};
+    filtrados.filter(r=>new Date(r.fecha).getFullYear()===anio).forEach(r=>{
+      const m = new Date(r.fecha).getMonth();
+      if(datos[r.nivel]) datos[r.nivel][m]++;
+    });
+    const total = NIVELES.reduce((s,n)=>s+datos[n].reduce((a,b)=>a+b,0),0);
+
+    if(wrapId){
+      const wrap = document.getElementById(wrapId);
+      if(!wrap) return;
+      if(total===0){ wrap.innerHTML = `<p class="muted">Aún no hay servicios registrados en ${anio} para graficar.</p>`; return; }
+    }
+    const metricsEl = document.getElementById('niMetrics');
+    if(metricsEl){
+      metricsEl.innerHTML = NIVELES.map(n=>`<div class="metric"><div class="n">${datos[n].reduce((a,b)=>a+b,0)}</div><div class="muted">${DESCRIPCION_NIVEL[n][0]} Total ${n}</div></div>`).join('');
+    }
+    const canvasId = wrapId ? null : 'niChart';
+    let canvas = wrapId ? document.getElementById(wrapId) : document.getElementById('niChart');
+    if(wrapId){
+      wrap.innerHTML = total===0 ? '' : '<canvas id="rsChart" height="90"></canvas>';
+      canvas = document.getElementById('rsChart');
+      if(!canvas) return;
+    }
+    if(chartRef){ chartRef.destroy(); chartRef=null; }
+    if(!canvas) return;
+    chartRef = new Chart(canvas.getContext('2d'), {
+      type:'bar',
+      data:{
+        labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+        datasets:[
+          {label:'Baja', data:datos.Baja, backgroundColor:'#59b37d'},
+          {label:'Media', data:datos.Media, backgroundColor:'#f2a30f'},
+          {label:'Alta', data:datos.Alta, backgroundColor:'#e0483f'}
+        ]
+      },
+      options:{
+        responsive:true,
+        plugins:{legend:{labels:{color:'#eef6f2'}}},
+        scales:{
+          x:{ticks:{color:'#8fada3'}, grid:{color:'#24463c'}},
+          y:{ticks:{color:'#8fada3', precision:0}, grid:{color:'#24463c'}, beginAtZero:true}
+        }
+      }
+    });
+  }
+
+  if(!wrapId){
+    const yearWrap = document.getElementById('niYearSel');
+    yearWrap.innerHTML = `<label>Año a consultar</label><select id="niYear">${anios.map(a=>`<option value="${a}">${a}</option>`).join('')}</select>`;
+    document.getElementById('niYear').addEventListener('change', e=>pintar(parseInt(e.target.value,10)));
+    pintar(anios[0]);
+  } else {
+    pintar(anioActual);
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+init();
+async function init(){
+  await ensureRangosSeed();
+  render();
+}
+</script>
+</body>
+</html>
