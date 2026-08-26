@@ -152,7 +152,8 @@
   .userchip .role{font-size:.7rem;color:var(--amber);text-transform:uppercase;letter-spacing:.6px;font-family:var(--font-mono);}
   .content{padding:26px 22px;max-width:1180px;margin:0 auto;}
   .codebox{font-family:var(--font-mono);background:var(--bg-2);border:1px dashed var(--amber);border-radius:8px;padding:10px 14px;display:inline-block;font-size:1.05rem;letter-spacing:3px;color:var(--amber);}
-  canvas.firma{background:#fff;border-radius:8px;border:1px solid var(--border);touch-action:none;max-width:100%;height:auto;display:block;}
+  .firma-wrap{width:100%;max-width:760px;}
+  canvas.firma{background:#fff;border-radius:10px;border:1px solid var(--border);touch-action:none;display:block;width:100%;}
   .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
   .table-scroll table{min-width:640px;}
   .chatbox{max-height:340px;overflow-y:auto;background:var(--bg-2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;}
@@ -169,15 +170,11 @@
 
 <script>
 /* =========================================================================
-   ALMACENAMIENTO PERSISTENTE (window.storage) — datos compartidos entre
-   quienes abran este artefacto: usuarios, clientes, reportes y mensajes
-   viven en storage "shared" para simular un backend real multiusuario.
+   ALMACENAMIENTO PERSISTENTE — Supabase (backend real, compartido entre
+   todos los dispositivos y navegadores que usen la app).
    ========================================================================= */
 const KEYS = { usuarios:'usuarios', clientes:'clientes', reportes:'reportes', mensajes:'mensajes', rangos:'rangos' };
 
-// window.storage solo existe dentro del panel de artefactos de Claude.ai.
-// Si el archivo se abre suelto en el navegador (doble clic / file://), usamos
-// localStorage como respaldo para que el guardado funcione igual.
 const SUPABASE_URL = 'https://atxzjojmemowrgyrqpol.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_1u3XTPd9Ypn-nciaPcueOg_9R0vJRSQ';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -248,6 +245,7 @@ let navTecnico = "Inicio";
 let navCliente = "Inicio";
 let chatContacto = null;
 let firmaCtx = null, firmaDrawing = false, firmaTieneTrazo = false;
+let firmaCssW = 0, firmaCssH = 0;
 let chartRef = null;
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
@@ -457,7 +455,7 @@ function wirePanelEvents(which){
       const pass = document.getElementById('loginPass').value;
       const usuarios = await loadKey(KEYS.usuarios, []);
       const u = usuarios.find(u=>u.correo===correo);
-      if(!u){ toast(TIENE_CLOUD_STORAGE ? 'No existe una cuenta con ese correo.' : 'No existe esa cuenta en este navegador (el guardado es local a cada navegador).', true); return; }
+      if(!u){ toast('No existe una cuenta con ese correo.', true); return; }
       const h = await hashPass(pass, u.salt);
       if(h !== u.passHash){ toast('Contraseña incorrecta.', true); return; }
       session = {id:u.id, nombre:u.nombre, correo:u.correo, rol:u.rol, telefono:u.telefono};
@@ -721,7 +719,8 @@ async function registrarServicioHtml(){
     <h4>✍️ Conformidad del encargado</h4>
     <div class="field"><label>Nombre del encargado que recibe el servicio</label><input type="text" id="rsEncargado" placeholder="Ej. María López"></div>
     <label>Firma (dibuja con el mouse o el dedo)</label>
-    <canvas id="firmaCanvas" class="firma" width="500" height="160"></canvas><br><br>
+    <div class="firma-wrap"><canvas id="firmaCanvas" class="firma"></canvas></div>
+    <br>
     <button type="button" class="ghost" id="btnLimpiarFirma">🧹 Limpiar firma</button>
 
     <div class="hazard"></div>
@@ -740,27 +739,64 @@ function rangosInfoHtml(tipo, rangos){
       return `<p class="muted" style="margin:4px 0;">${icono} <b>${n}</b> (${rango}): ${desc}</p>`;
     }).join('');
 }
-function wireRegistrarServicio(){
+function inicializarFirmaCanvas(){
   const canvas = document.getElementById('firmaCanvas');
-  firmaCtx = canvas.getContext('2d');
-  firmaCtx.fillStyle = '#fff'; firmaCtx.fillRect(0,0,canvas.width,canvas.height);
-  firmaCtx.strokeStyle = '#111'; firmaCtx.lineWidth = 2.4; firmaCtx.lineCap = 'round';
-  firmaTieneTrazo = false;
+  const dpr = window.devicePixelRatio || 1;
+
+  function dibujarFondoBlanco(){
+    firmaCtx.save();
+    firmaCtx.setTransform(1,0,0,1,0,0);
+    firmaCtx.fillStyle = '#fff';
+    firmaCtx.fillRect(0,0,canvas.width,canvas.height);
+    firmaCtx.restore();
+  }
+
+  function ajustarTamano(){
+    const rect = canvas.getBoundingClientRect();
+    const cssW = rect.width || canvas.parentElement.clientWidth || 500;
+    // Más alto en pantallas angostas (móvil) y más bajo en pantallas anchas (escritorio)
+    const cssH = Math.round(Math.max(220, Math.min(380, cssW * (cssW < 520 ? 0.62 : 0.4))));
+    firmaCssW = cssW; firmaCssH = cssH;
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    firmaCtx = canvas.getContext('2d');
+    firmaCtx.setTransform(dpr,0,0,dpr,0,0);
+    dibujarFondoBlanco();
+    firmaCtx.strokeStyle = '#111';
+    firmaCtx.lineWidth = 2.6;
+    firmaCtx.lineCap = 'round';
+    firmaCtx.lineJoin = 'round';
+    firmaTieneTrazo = false;
+  }
+
+  ajustarTamano();
+  window.addEventListener('resize', ajustarTamano);
+  return canvas;
+}
+function wireRegistrarServicio(){
+  const canvas = inicializarFirmaCanvas();
 
   function pos(e){
     const r = canvas.getBoundingClientRect();
     const cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
     const cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
-    return [cx * canvas.width / r.width, cy * canvas.height / r.height];
+    return [cx, cy];
   }
   function start(e){ e.preventDefault(); firmaDrawing = true; const [x,y]=pos(e); firmaCtx.beginPath(); firmaCtx.moveTo(x,y); }
   function move(e){ if(!firmaDrawing) return; e.preventDefault(); const [x,y]=pos(e); firmaCtx.lineTo(x,y); firmaCtx.stroke(); firmaTieneTrazo = true; }
   function end(){ firmaDrawing = false; }
   canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', end);
-  canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', move); canvas.addEventListener('touchend', end);
+  canvas.addEventListener('touchstart', start, {passive:false}); canvas.addEventListener('touchmove', move, {passive:false}); canvas.addEventListener('touchend', end);
 
   document.getElementById('btnLimpiarFirma').addEventListener('click', ()=>{
-    firmaCtx.fillStyle = '#fff'; firmaCtx.fillRect(0,0,canvas.width,canvas.height); firmaTieneTrazo = false;
+    firmaCtx.save();
+    firmaCtx.setTransform(1,0,0,1,0,0);
+    firmaCtx.fillStyle = '#fff';
+    firmaCtx.fillRect(0,0,canvas.width,canvas.height);
+    firmaCtx.restore();
+    firmaTieneTrazo = false;
   });
 
   document.getElementById('rsCliente').addEventListener('change', async (e)=>{
